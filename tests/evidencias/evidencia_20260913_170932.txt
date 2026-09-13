@@ -1,0 +1,162 @@
+
+======================================================================
+0. Preparando ambiente (reset do banco para teste determinístico)
+======================================================================
+$ docker compose down -v && docker compose up -d
+ Network entrega1_default Creating 
+ Volume entrega1_pg_data Creating 
+ Volume entrega1_pg_data Creating 
+ Network entrega1_default Creating 
+ Volume entrega1_pg_data Created 
+ Volume entrega1_pg_data Created 
+ Network entrega1_default Created 
+ Network entrega1_default Created 
+ Container mba_ia_postgres Creating 
+ Container mba_ia_postgres Created 
+ Container mba_ia_postgres Starting 
+ Container mba_ia_postgres Started 
+
+2026-09-13 20:09:33.393 UTC [48] LOG:  shutting down
+2026-09-13 20:09:33.393 UTC [48] LOG:  checkpoint starting: shutdown immediate
+2026-09-13 20:09:33.412 UTC [48] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.007 s, sync=0.011 s, total=0.019 s; sync files=301, longest=0.004 s, average=0.001 s; distance=4238 kB, estimate=4238 kB; lsn=0/190A998, redo lsn=0/190A998
+2026-09-13 20:09:33.414 UTC [47] LOG:  database system is shut down
+ done
+server stopped
+
+PostgreSQL init process complete; ready for start up.
+
+2026-09-13 20:09:33.509 UTC [1] LOG:  starting PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-13 20:09:33.510 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-13 20:09:33.511 UTC [63] LOG:  database system was shut down at 2026-09-13 20:09:33 UTC
+2026-09-13 20:09:33.513 UTC [1] LOG:  database system is ready to accept connections
+
+======================================================================
+1. Ingestão inicial do document.pdf
+======================================================================
+>>> ingest_pdf('/Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/document.pdf') retornou: 15 chunks
+
+--- Log do container do banco (docker logs --tail 15) ---
+2026-09-13 20:09:33.393 UTC [48] LOG:  shutting down
+2026-09-13 20:09:33.393 UTC [48] LOG:  checkpoint starting: shutdown immediate
+2026-09-13 20:09:33.412 UTC [48] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.007 s, sync=0.011 s, total=0.019 s; sync files=301, longest=0.004 s, average=0.001 s; distance=4238 kB, estimate=4238 kB; lsn=0/190A998, redo lsn=0/190A998
+2026-09-13 20:09:33.414 UTC [47] LOG:  database system is shut down
+ done
+server stopped
+
+PostgreSQL init process complete; ready for start up.
+
+2026-09-13 20:09:33.509 UTC [1] LOG:  starting PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-13 20:09:33.510 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-13 20:09:33.511 UTC [63] LOG:  database system was shut down at 2026-09-13 20:09:33 UTC
+2026-09-13 20:09:33.513 UTC [1] LOG:  database system is ready to accept connections
+
+--- Query de quantidade (total) ---
+count 
+-------
+    15
+(1 row)
+
+--- Query de quantidade por arquivo de origem ---
+arquivo                                                        | count 
+----------------------------------------------------------------------------------------------------------------------+-------
+ /Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/document.pdf |    15
+(1 row)
+[PASS] Contagem no banco bate com o retorno de ingest_pdf() — banco=15, retorno=15
+
+======================================================================
+2. Pergunta DENTRO do contexto
+======================================================================
+PERGUNTA: Qual o objetivo desta resolução?
+ERRO: Cota gratuita da API excedida (limite diário do modelo). Tente novamente mais tarde ou troque GOOGLE_LLM_MODEL.
+
+======================================================================
+3. Pergunta FORA do contexto
+======================================================================
+PERGUNTA: Qual a capital da França?
+ERRO: Cota gratuita da API excedida (limite diário do modelo). Tente novamente mais tarde ou troque GOOGLE_LLM_MODEL.
+
+======================================================================
+4. Busca por similaridade (search.py) com k=10
+======================================================================
+Quantidade de resultados retornados: 10
+  [1] score=0.1844 trecho='operações de crédito e de arrendamento mercantil ﬁnanceiro pelas instituições ﬁn'
+  [2] score=0.1960 trecho='CAPÍTULO III\nDA LIQUIDAÇÃO ANTECIPADA\nArt. 6º \xa0As instituições de que trata o ar'
+  [3] score=0.1962 trecho='Parágrafo único. \xa0O disposto no caput deve estar previsto em cláusula contratual'
+[PASS] search_similar_chunks respeita k<=10
+[PASS] search_similar_chunks retorna pelo menos 1 resultado
+
+======================================================================
+5. Anexando um segundo PDF (simula o comando 'anexar' do chat / upload da API)
+======================================================================
+Fixture de teste criada em '/Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/tests/fixtures/segundo_documento_teste.pdf' (cópia do document.pdf, só para validar o pipeline de anexação)
+>>> ingest_pdf('/Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/tests/fixtures/segundo_documento_teste.pdf') retornou: 15 chunks
+
+--- Log do container do banco (docker logs --tail 15) ---
+2026-09-13 20:09:33.393 UTC [48] LOG:  shutting down
+2026-09-13 20:09:33.393 UTC [48] LOG:  checkpoint starting: shutdown immediate
+2026-09-13 20:09:33.412 UTC [48] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.007 s, sync=0.011 s, total=0.019 s; sync files=301, longest=0.004 s, average=0.001 s; distance=4238 kB, estimate=4238 kB; lsn=0/190A998, redo lsn=0/190A998
+2026-09-13 20:09:33.414 UTC [47] LOG:  database system is shut down
+ done
+server stopped
+
+PostgreSQL init process complete; ready for start up.
+
+I0913 17:13:14.016979  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017034  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017037  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017038  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017039  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017041  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017042  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017043  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017044  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+I0913 17:13:14.017046  335852 ev_poll_posix.cc:593] FD from fork parent still in poll list: fd(12, generation: 1)
+2026-09-13 20:09:33.509 UTC [1] LOG:  starting PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-13 20:09:33.509 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-13 20:09:33.510 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-13 20:09:33.511 UTC [63] LOG:  database system was shut down at 2026-09-13 20:09:33 UTC
+2026-09-13 20:09:33.513 UTC [1] LOG:  database system is ready to accept connections
+
+--- Query de quantidade (total) ---
+count 
+-------
+    30
+(1 row)
+
+--- Query de quantidade por arquivo de origem ---
+arquivo                                                                       | count 
+----------------------------------------------------------------------------------------------------------------------------------------------------+-------
+ /Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/document.pdf                               |    15
+ /Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/tests/fixtures/segundo_documento_teste.pdf |    15
+(2 rows)
+[PASS] Contagem total após anexar = ingestão inicial + novo PDF — esperado 30, obtido 30
+
+======================================================================
+6. Pergunta após anexar (base compartilhada deve continuar respondendo)
+======================================================================
+PERGUNTA: Qual o objetivo desta resolução?
+ERRO: Cota gratuita da API excedida (limite diário do modelo). Tente novamente mais tarde ou troque GOOGLE_LLM_MODEL.
+
+======================================================================
+7. Limpeza (deixando o banco de volta só com document.pdf)
+======================================================================
+Banco resetado e reingerido: 15 chunks (apenas document.pdf)
+Fixture de teste removida: /Users/aldalopesmonte/Library/CloudStorage/OneDrive-Pessoal/Carreira e estudos/MBA Full Cycle/Entrega 1/tests/fixtures/segundo_documento_teste.pdf
+
+======================================================================
+Resumo
+======================================================================
+[PASS] Contagem no banco bate com o retorno de ingest_pdf()
+[ERROR] Pergunta dentro do contexto respondida
+[ERROR] Pergunta fora do contexto recusada corretamente
+[PASS] search_similar_chunks respeita k<=10
+[PASS] search_similar_chunks retorna pelo menos 1 resultado
+[PASS] Contagem total após anexar = ingestão inicial + novo PDF
+[ERROR] Ainda responde corretamente após anexar novo PDF
+
+RESULTADO FINAL: 3 item(ns) com problema (FAIL/ERROR).

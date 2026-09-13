@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat sobre PDFs</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --panel: #ffffff;
+    --border: #e2e2e6;
+    --text: #1c1c1e;
+    --muted: #6e6e73;
+    --user-bubble: #2563eb;
+    --bot-bubble: #ececef;
+    --error: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 16px 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  header p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; line-height: 1.4; font-size: 14px; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: var(--user-bubble); color: white; border-bottom-right-radius: 2px; }
+  .msg.bot { align-self: flex-start; background: var(--bot-bubble); color: var(--text); border-bottom-left-radius: 2px; }
+  .msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 12px; font-style: italic; }
+  .msg.error { align-self: flex-start; background: #fee2e2; color: var(--error); }
+
+  footer {
+    padding: 16px 24px 24px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+  form {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--user-bubble);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #attachBtn { background: var(--bot-bubble); color: var(--text); }
+  #fileInput { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chat sobre PDFs</h1>
+    <p>Pergunte sobre o conteúdo já ingerido, ou anexe um novo PDF para adicioná-lo à base.</p>
+  </div>
+</header>
+
+<div id="messages"></div>
+
+<footer>
+  <form id="chatForm">
+    <input type="file" id="fileInput" accept="application/pdf">
+    <button type="button" id="attachBtn" title="Anexar PDF">📎</button>
+    <input type="text" id="questionInput" placeholder="Faça sua pergunta..." autocomplete="off">
+    <button type="submit" id="sendBtn">Enviar</button>
+  </form>
+</footer>
+
+<script>
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('chatForm');
+  const input = document.getElementById('questionInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const attachBtn = document.getElementById('attachBtn');
+  const fileInput = document.getElementById('fileInput');
+
+  function addMessage(text, kind) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + kind;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function setBusy(busy) {
+    input.disabled = busy;
+    sendBtn.disabled = busy;
+    attachBtn.disabled = busy;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pergunta = input.value.trim();
+    if (!pergunta) return;
+
+    addMessage(pergunta, 'user');
+    input.value = '';
+    setBusy(true);
+    const thinking = addMessage('Pensando...', 'system');
+
+    try {
+      const resp = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pergunta })
+      });
+      thinking.remove();
+      if (!resp.ok) throw new Error('Falha na API (' + resp.status + ')');
+      const data = await resp.json();
+      addMessage(data.resposta, 'bot');
+    } catch (err) {
+      thinking.remove();
+      addMessage('Erro ao consultar: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
+      input.focus();
+    }
+  });
+
+  attachBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    addMessage('Anexando "' + file.name + '"...', 'system');
+    setBusy(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const resp = await fetch('/api/ingest', { method: 'POST', body: formData });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.detail || ('Falha na API (' + resp.status + ')'));
+      }
+      const data = await resp.json();
+      addMessage('"' + data.arquivo + '" adicionado à base (' + data.chunks + ' chunks). Já pode perguntar sobre ele.', 'system');
+    } catch (err) {
+      addMessage('Erro ao anexar PDF: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
+      fileInput.value = '';
+    }
+  });
+</script>
+
+</body>
+</html>
