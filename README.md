@@ -1,3 +1,8 @@
+# Atividade acadêmica
+Curso: MBA em Engenharia de Software com IA
+Turma: 6
+Aluna: Alda Monte
+
 # Ingestão e Busca Semântica com LangChain e Postgres
 
 Ingestão de um PDF em um banco PostgreSQL com pgVector e busca semântica via CLI, usando LangChain e Google Gemini.
