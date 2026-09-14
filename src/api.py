@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(__file__))
-from chat import answer_question
+from chat import answer_question, friendly_error_message
 from ingest import ingest_pdf
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
@@ -22,12 +22,15 @@ class Pergunta(BaseModel):
 
 @app.post("/api/ask")
 def ask(payload: Pergunta):
-    resposta = answer_question(payload.pergunta)
+    try:
+        resposta = answer_question(payload.pergunta)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=friendly_error_message(exc)) from exc
     return {"resposta": resposta}
 
 
 @app.post("/api/ingest")
-async def ingest(file: UploadFile = File(...)):
+def ingest(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Envie um arquivo .pdf")
 
