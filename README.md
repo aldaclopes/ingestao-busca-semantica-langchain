@@ -100,7 +100,7 @@ O PDF anexado passa pelo mesmo pipeline do `ingest.py` (split em chunks de 1000/
 
 ## Interface web (opcional)
 
-Além do CLI (obrigatório pelo desafio), o projeto tem uma interface de chat simples no navegador, para facilitar testes manuais. Ela roda inteiramente local, junto com o restante do projeto — não precisa de internet além de chamar a API do Gemini.
+Além do CLI (obrigatório pelo desafio), o projeto tem uma interface de chat simples no navegador, para facilitar testes manuais. Ela roda inteiramente local, junto com o restante do projeto.
 
 Com o banco já rodando (`docker compose up -d`) e as dependências instaladas, suba a API:
 
